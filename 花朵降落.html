@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>花朵飘落动画</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    
+    <style>
+        /* 直接使用CSS而非Tailwind工具类，确保动画兼容性 */
+        body {
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            background: linear-gradient(to bottom right, #fff1e6, #fcd5ce);
+            overflow-x: hidden;
+        }
+        
+        .flower {
+            position: absolute;
+            pointer-events: none;
+            z-index: 10;
+            opacity: 0;
+        }
+        
+        .flower-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 10;
+        }
+        
+        .bouquet {
+            cursor: pointer;
+            transition: transform 0.2s ease;
+        }
+        
+        .bouquet:active {
+            transform: scale(0.9);
+        }
+        
+        /* 绽放动画 */
+        @keyframes bloom {
+            0% { transform: scale(0) rotate(0deg); opacity: 0; }
+            100% { transform: scale(1) rotate(360deg); opacity: 1; }
+        }
+        
+        /* 浮动动画 */
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+        
+        .floating {
+            animation: float 3s ease-in-out infinite;
+        }
+    </style>
+</head>
+<body>
+    <div class="text-center pt-8 relative z-20">
+        <h1 class="text-[clamp(1.8rem,5vw,3rem)] font-bold text-[#e86a92] mb-2">
+            花之雨
+        </h1>
+        <p class="text-[#594a4e]/70 text-lg">点击下方花束，让美丽绽放</p>
+    </div>
+    
+    <div class="flex flex-col items-center justify-center min-h-[60vh] relative z-20 px-4">
+        <!-- 花束图标 -->
+        <div class="bouquet floating w-24 h-24 md:w-32 md:h-32 bg-[#e86a92]/10 rounded-full flex items-center justify-center shadow-lg mb-8">
+            <i class="fa fa-pagelines text-5xl md:text-6xl text-[#e86a92]"></i>
+        </div>
+        
+        <p class="text-[#594a4e]/60 text-center max-w-md">
+            每次点击都会有不同的花朵从天而降，创造属于你的花海
+        </p>
+    </div>
+    
+    <footer class="w-full text-center py-4 text-[#594a4e]/50 text-sm relative z-20">
+        <p>尽情享受这份美丽与宁静</p>
+    </footer>
+    
+    <!-- 花朵容器 -->
+    <div class="flower-container" id="flowerContainer"></div>
+    
+    <script>
+        // 等待页面完全加载
+        window.onload = function() {
+            // 确保容器元素存在
+            const flowerContainer = document.getElementById('flowerContainer');
+            if (!flowerContainer) {
+                alert('花朵容器未找到！');
+                return;
+            }
+            
+            // 花束元素
+            const bouquet = document.querySelector('.bouquet');
+            if (!bouquet) {
+                alert('花束元素未找到！');
+                return;
+            }
+            
+            // 定义可用的花朵类型（确保都是Font Awesome存在的图标）
+            const flowerTypes = [
+                { icon: 'fa-pagelines', colors: ['#4CAF50', '#8BC34A', '#CDDC39'] },
+                { icon: 'fa-leaf', colors: ['#795548', '#689F38', '#558B2F'] },
+                { icon: 'fa-heart', colors: ['#E91E63', '#C2185B', '#AD1457'] },
+                { icon: 'fa-star', colors: ['#FFC107', '#FFD54F', '#FFEB3B'] },
+                { icon: 'fa-asterisk', colors: ['#673AB7', '#7E57C2', '#9575CD'] }
+            ];
+            
+            // 创建花朵函数
+            function createFlower() {
+                // 创建花朵元素
+                const flower = document.createElement('i');
+                
+                // 随机选择花朵类型和颜色
+                const type = flowerTypes[Math.floor(Math.random() * flowerTypes.length)];
+                const color = type.colors[Math.floor(Math.random() * type.colors.length)];
+                
+                // 设置基本样式
+                flower.className = `fa ${type.icon} flower`;
+                flower.style.color = color;
+                
+                // 随机大小 (16-36px)
+                const size = Math.floor(Math.random() * 20) + 16;
+                flower.style.fontSize = `${size}px`;
+                
+                // 随机水平位置
+                const startX = Math.random() * window.innerWidth;
+                flower.style.left = `${startX}px`;
+                flower.style.top = '-30px'; // 从顶部外开始
+                
+                // 添加到容器
+                flowerContainer.appendChild(flower);
+                
+                // 执行绽放动画
+                flower.style.animation = 'bloom 0.5s forwards';
+                
+                // 开始飘落
+                setTimeout(() => {
+                    animateFall(flower);
+                }, 500);
+            }
+            
+            // 花朵飘落动画
+            function animateFall(flower) {
+                const duration = Math.random() * 4 + 3; // 3-7秒
+                const startY = -30;
+                const endY = window.innerHeight + 50;
+                const startX = parseFloat(flower.style.left);
+                const swayAmount = (Math.random() - 0.5) * 100; // 左右摇摆幅度
+                const rotation = (Math.random() - 0.5) * 720; // 旋转角度
+                
+                const startTime = performance.now();
+                
+                function update(currentTime) {
+                    const elapsed = currentTime - startTime;
+                    const progress = Math.min(elapsed / (duration * 1000), 1);
+                    
+                    // 计算位置
+                    const yPos = startY + (endY - startY) * progress;
+                    const xPos = startX + swayAmount * Math.sin(progress * Math.PI * 2);
+                    const rotatePos = rotation * progress;
+                    
+                    // 应用样式
+                    flower.style.top = `${yPos}px`;
+                    flower.style.left = `${xPos}px`;
+                    flower.style.transform = `rotate(${rotatePos}deg)`;
+                    
+                    // 逐渐淡出
+                    flower.style.opacity = 1 - (progress * 0.8);
+                    
+                    // 继续动画或清理
+                    if (progress < 1) {
+                        requestAnimationFrame(update);
+                    } else {
+                        // 移除元素
+                        if (flower.parentNode === flowerContainer) {
+                            flowerContainer.removeChild(flower);
+                        }
+                    }
+                }
+                
+                // 开始动画
+                requestAnimationFrame(update);
+            }
+            
+            // 点击花束生成花朵
+            bouquet.addEventListener('click', function() {
+                // 生成15-25朵花
+                const count = Math.floor(Math.random() * 11) + 15;
+                for (let i = 0; i < count; i++) {
+                    setTimeout(createFlower, i * 50);
+                }
+            });
+            
+            // 页面加载后立即生成一些花作为演示
+            setTimeout(() => {
+                for (let i = 0; i < 8; i++) {
+                    setTimeout(createFlower, i * 200);
+                }
+            }, 1000);
+            
+            // 测试消息，确认脚本已加载
+            console.log('花朵动画脚本已加载，准备就绪！');
+        };
+    </script>
+</body>
+</html>
